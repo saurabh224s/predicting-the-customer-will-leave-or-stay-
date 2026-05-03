@@ -1,0 +1,149 @@
+# ============================================================
+# CELL 12: Interactive Prediction Interface
+# ============================================================
+
+def predict_churn(tenure, monthly_charges, total_charges,
+                  contract, internet, senior, partner):
+    """
+    Predict customer churn probability
+    """
+    # Load model and scaler
+    model = joblib.load('churn_model.pkl')
+    sc = joblib.load('scaler.pkl')
+    feature_names = joblib.load('feature_names.pkl')
+    
+    # Build input dictionary with all zeros
+    input_data = {feat: 0 for feat in feature_names}
+    
+    # Fill known values
+    input_data['tenure'] = tenure
+    input_data['MonthlyCharges'] = monthly_charges
+    input_data['TotalCharges'] = total_charges
+    input_data['SeniorCitizen'] = 1 if senior == 'Yes' else 0
+    input_data['Partner'] = 1 if partner == 'Yes' else 0
+    input_data['AvgMonthlyCharges'] = total_charges / (tenure + 1)
+    input_data['TenureGroup'] = min(3, tenure // 12)
+    
+    # Contract encoding
+    contract_map = {
+        'Month-to-month': 'Contract_One year',
+        'One year': 'Contract_One year',
+        'Two year': 'Contract_Two year'
+    }
+    if contract in contract_map and contract_map[contract] in input_data:
+        input_data[contract_map[contract]] = 1
+    
+    # Internet encoding
+    if internet == 'Fiber optic' and 'InternetService_Fiber optic' in input_data:
+        input_data['InternetService_Fiber optic'] = 1
+    elif internet == 'No' and 'InternetService_No' in input_data:
+        input_data['InternetService_No'] = 1
+    
+    # Convert to array and scale
+    input_array = np.array([[input_data[f] for f in feature_names]])
+    input_scaled = sc.transform(input_array)
+    
+    # Predict
+    prob = model.predict_proba(input_scaled)[0][1]
+    pred = model.predict(input_scaled)[0]
+    
+    return prob, pred
+
+
+# ── Widgets ──────────────────────────────────────────────
+style = {'description_width': 'initial'}
+
+w_tenure = widgets.IntSlider(
+    value=12, min=0, max=72, step=1,
+    description='📅 Tenure (months):', style=style, layout=widgets.Layout(width='500px'))
+
+w_monthly = widgets.FloatSlider(
+    value=65.0, min=18.0, max=120.0, step=0.5,
+    description='💰 Monthly Charges ($):', style=style, layout=widgets.Layout(width='500px'))
+
+w_total = widgets.FloatSlider(
+    value=800.0, min=18.0, max=8500.0, step=10.0,
+    description='💳 Total Charges ($):', style=style, layout=widgets.Layout(width='500px'))
+
+w_contract = widgets.Dropdown(
+    options=['Month-to-month', 'One year', 'Two year'],
+    value='Month-to-month',
+    description='📄 Contract Type:', style=style)
+
+w_internet = widgets.Dropdown(
+    options=['DSL', 'Fiber optic', 'No'],
+    value='Fiber optic',
+    description='🌐 Internet Service:', style=style)
+
+w_senior = widgets.ToggleButtons(
+    options=['No', 'Yes'],
+    description='👴 Senior Citizen:', style=style)
+
+w_partner = widgets.ToggleButtons(
+    options=['No', 'Yes'],
+    description='💑 Has Partner:', style=style)
+
+output = widgets.Output()
+
+def on_predict_clicked(b):
+    with output:
+        output.clear_output()
+        prob, pred = predict_churn(
+            w_tenure.value, w_monthly.value, w_total.value,
+            w_contract.value, w_internet.value,
+            w_senior.value, w_partner.value
+        )
+        
+        risk_level = "🔴 HIGH RISK" if prob > 0.7 else "🟡 MEDIUM RISK" if prob > 0.4 else "🟢 LOW RISK"
+        color = "#e74c3c" if prob > 0.7 else "#f39c12" if prob > 0.4 else "#2ecc71"
+        
+        html_result = f"""
+        <div style="border:3px solid {color}; border-radius:15px; padding:25px;
+                    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+                    margin:10px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h2 style="color:{color}; text-align:center; margin-bottom:15px;">
+                {risk_level}
+            </h2>
+            <hr style="border-color:{color}; margin:10px 0;">
+            <div style="display:flex; justify-content:space-around; margin:15px 0;">
+                <div style="text-align:center;">
+                    <h3 style="color:#2c3e50;">Churn Probability</h3>
+                    <h1 style="color:{color}; font-size:48px;">{prob*100:.1f}%</h1>
+                </div>
+                <div style="text-align:center;">
+                    <h3 style="color:#2c3e50;">Prediction</h3>
+                    <h1 style="font-size:48px;">{'❌ CHURN' if pred == 1 else '✅ STAY'}</h1>
+                </div>
+            </div>
+            <hr style="border-color:{color}; margin:10px 0;">
+            <p style="color:#7f8c8d; text-align:center; font-size:13px;">
+                Tenure: {w_tenure.value}m | 
+                Monthly: ${w_monthly.value:.0f} | 
+                Contract: {w_contract.value} | 
+                Internet: {w_internet.value}
+            </p>
+        </div>
+        """
+        display(HTML(html_result))
+
+# Predict Button
+btn = widgets.Button(
+    description='🔮 Predict Churn',
+    button_style='danger',
+    layout=widgets.Layout(width='200px', height='45px'),
+    style={'font_weight': 'bold'}
+)
+btn.on_click(on_predict_clicked)
+
+# Layout
+print("=" * 55)
+print("🎮 CUSTOMER CHURN PREDICTION INTERFACE")
+print("=" * 55)
+
+display(widgets.VBox([
+    widgets.HTML("<h3 style='color:#2c3e50'>⚙️ Customer Parameters:</h3>"),
+    w_tenure, w_monthly, w_total,
+    w_contract, w_internet, w_senior, w_partner,
+    widgets.HBox([btn]),
+    output
+]))
