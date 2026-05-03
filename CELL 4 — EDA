@@ -1,0 +1,25 @@
+# ============================================================
+# CELL 4: Exploratory Data Analysis (EDA)
+# ============================================================
+
+print("=" * 55)
+print("📊 DATASET INFORMATION")
+print("=" * 55)
+print(df.info())
+
+print("\n" + "=" * 55)
+print("📈 STATISTICAL SUMMARY")
+print("=" * 55)
+display(df.describe())
+
+print("\n" + "=" * 55)
+print("❓ MISSING VALUES")
+print("=" * 55)
+missing = df.isnull().sum()
+print(missing[missing > 0] if missing.sum() > 0 else "No missing values found ✅")
+
+print("\n" + "=" * 55)
+print("🎯 TARGET DISTRIBUTION")
+print("=" * 55)
+print(df['Churn'].value_counts())
+print(f"\nChurn Rate: {df['Churn'].value_counts(normalize=True)['Yes']*100:.1f}%")
