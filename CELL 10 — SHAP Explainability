@@ -1,0 +1,42 @@
+# ============================================================
+# CELL 10: SHAP Values - Model Explainability
+# ============================================================
+
+print("🔬 Computing SHAP Values for Model Explainability...")
+
+# Use a sample for speed
+X_sample = X_test_df.sample(200, random_state=42)
+
+# SHAP Explainer
+explainer = shap.TreeExplainer(best_rf)
+shap_values = explainer.shap_values(X_sample)
+
+# If binary classification, take positive class
+shap_vals = shap_values[1] if isinstance(shap_values, list) else shap_values
+
+fig, axes = plt.subplots(1, 2, figsize=(18, 8))
+fig.suptitle('🔬 SHAP Model Explainability', fontsize=16, fontweight='bold')
+
+# 1. SHAP Summary Plot
+plt.figure(figsize=(10, 8))
+shap.summary_plot(shap_vals, X_sample,
+                  plot_type="bar",
+                  max_display=15,
+                  show=False,
+                  color='steelblue')
+plt.title('🏆 Top 15 Most Important Features (SHAP)', fontsize=14, fontweight='bold')
+plt.tight_layout()
+plt.savefig('shap_importance.png', bbox_inches='tight', dpi=150)
+plt.show()
+
+# 2. SHAP Beeswarm Plot
+plt.figure(figsize=(10, 8))
+shap.summary_plot(shap_vals, X_sample,
+                  max_display=15,
+                  show=False)
+plt.title('📊 SHAP Feature Impact (Beeswarm)', fontsize=14, fontweight='bold')
+plt.tight_layout()
+plt.savefig('shap_beeswarm.png', bbox_inches='tight', dpi=150)
+plt.show()
+
+print("✅ SHAP Analysis Complete!")
