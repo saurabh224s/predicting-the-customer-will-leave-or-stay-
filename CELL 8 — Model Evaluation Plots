@@ -1,0 +1,86 @@
+# ============================================================
+# CELL 8: Model Evaluation Visualizations
+# ============================================================
+
+fig, axes = plt.subplots(2, 2, figsize=(16, 14))
+fig.suptitle('📈 Model Evaluation Dashboard', fontsize=18, fontweight='bold')
+
+colors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12']
+
+# 1. ROC Curves
+ax = axes[0, 0]
+for (name, r), color in zip(results.items(), colors):
+    fpr, tpr, _ = roc_curve(y_test, r['y_prob'])
+    ax.plot(fpr, tpr, label=f"{name} (AUC={r['roc_auc']:.3f})",
+            linewidth=2.5, color=color)
+ax.plot([0, 1], [0, 1], 'k--', linewidth=1.5, label='Random')
+ax.fill_between([0, 1], [0, 1], alpha=0.1, color='gray')
+ax.set_xlabel('False Positive Rate', fontsize=12)
+ax.set_ylabel('True Positive Rate', fontsize=12)
+ax.set_title('🎯 ROC Curves - All Models', fontsize=14, fontweight='bold')
+ax.legend(fontsize=10)
+ax.grid(True, alpha=0.3)
+
+# 2. Metrics Comparison Bar Chart
+metrics = ['accuracy', 'f1_score', 'roc_auc', 'precision', 'recall']
+metric_labels = ['Accuracy', 'F1-Score', 'ROC-AUC', 'Precision', 'Recall']
+x = np.arange(len(metrics))
+width = 0.2
+
+ax = axes[0, 1]
+for i, (name, r) in enumerate(results.items()):
+    vals = [r[m] for m in metrics]
+    bars = ax.bar(x + i * width, vals, width, label=name,
+                  color=colors[i], edgecolor='black', alpha=0.85)
+
+ax.set_xlabel('Metrics', fontsize=12)
+ax.set_ylabel('Score', fontsize=12)
+ax.set_title('📊 Metrics Comparison', fontsize=14, fontweight='bold')
+ax.set_xticks(x + width * 1.5)
+ax.set_xticklabels(metric_labels, fontsize=10)
+ax.legend(fontsize=9)
+ax.set_ylim(0, 1.1)
+ax.grid(axis='y', alpha=0.3)
+
+# 3. Best Model Confusion Matrix
+best_model_name = max(results, key=lambda k: results[k]['roc_auc'])
+best_result = results[best_model_name]
+cm = confusion_matrix(y_test, best_result['y_pred'])
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=axes[1, 0],
+            linewidths=2, linecolor='white',
+            xticklabels=['No Churn', 'Churn'],
+            yticklabels=['No Churn', 'Churn'],
+            annot_kws={"size": 16, "weight": "bold"})
+axes[1, 0].set_title(f'🔲 Confusion Matrix\n{best_model_name}',
+                      fontsize=14, fontweight='bold')
+axes[1, 0].set_ylabel('Actual', fontsize=12)
+axes[1, 0].set_xlabel('Predicted', fontsize=12)
+
+# 4. Feature Importance (Best Model - Random Forest or XGBoost)
+if hasattr(best_result['model'], 'feature_importances_'):
+    importances = best_result['model'].feature_importances_
+    feat_imp = pd.Series(importances, index=X.columns)
+    top_15 = feat_imp.nlargest(15)
+    
+    colors_bar = plt.cm.RdYlGn(np.linspace(0.2, 0.9, 15))
+    top_15.sort_values().plot(kind='barh', ax=axes[1, 1], color=colors_bar)
+    axes[1, 1].set_title(f'🔑 Top 15 Feature Importances\n{best_model_name}',
+                          fontsize=14, fontweight='bold')
+    axes[1, 1].set_xlabel('Importance Score', fontsize=12)
+else:
+    # Logistic Regression Coefficients
+    coef = np.abs(best_result['model'].coef_[0])
+    feat_imp = pd.Series(coef, index=X.columns)
+    top_15 = feat_imp.nlargest(15)
+    top_15.sort_values().plot(kind='barh', ax=axes[1, 1], color='steelblue')
+    axes[1, 1].set_title(f'🔑 Top 15 Coefficients\n{best_model_name}',
+                          fontsize=14, fontweight='bold')
+
+plt.tight_layout()
+plt.savefig('model_evaluation.png', bbox_inches='tight', dpi=150)
+plt.show()
+
+print(f"\n🏆 Best Model: {best_model_name}")
+print(f"   ROC-AUC:  {best_result['roc_auc']:.4f}")
+print(f"   F1-Score: {best_result['f1_score']:.4f}")
+print(f"   Accuracy: {best_result['accuracy']:.4f}")
