@@ -11,10 +11,10 @@ def predict_churn(tenure, monthly_charges, total_charges,
     model = joblib.load('churn_model.pkl')
     sc = joblib.load('scaler.pkl')
     feature_names = joblib.load('feature_names.pkl')
-    
+
     # Build input dictionary with all zeros
     input_data = {feat: 0 for feat in feature_names}
-    
+
     # Fill known values
     input_data['tenure'] = tenure
     input_data['MonthlyCharges'] = monthly_charges
@@ -23,7 +23,7 @@ def predict_churn(tenure, monthly_charges, total_charges,
     input_data['Partner'] = 1 if partner == 'Yes' else 0
     input_data['AvgMonthlyCharges'] = total_charges / (tenure + 1)
     input_data['TenureGroup'] = min(3, tenure // 12)
-    
+
     # Contract encoding
     contract_map = {
         'Month-to-month': 'Contract_One year',
@@ -32,21 +32,21 @@ def predict_churn(tenure, monthly_charges, total_charges,
     }
     if contract in contract_map and contract_map[contract] in input_data:
         input_data[contract_map[contract]] = 1
-    
+
     # Internet encoding
     if internet == 'Fiber optic' and 'InternetService_Fiber optic' in input_data:
         input_data['InternetService_Fiber optic'] = 1
     elif internet == 'No' and 'InternetService_No' in input_data:
         input_data['InternetService_No'] = 1
-    
+
     # Convert to array and scale
     input_array = np.array([[input_data[f] for f in feature_names]])
     input_scaled = sc.transform(input_array)
-    
+
     # Predict
     prob = model.predict_proba(input_scaled)[0][1]
     pred = model.predict(input_scaled)[0]
-    
+
     return prob, pred
 
 
@@ -93,10 +93,10 @@ def on_predict_clicked(b):
             w_contract.value, w_internet.value,
             w_senior.value, w_partner.value
         )
-        
+
         risk_level = "🔴 HIGH RISK" if prob > 0.7 else "🟡 MEDIUM RISK" if prob > 0.4 else "🟢 LOW RISK"
         color = "#e74c3c" if prob > 0.7 else "#f39c12" if prob > 0.4 else "#2ecc71"
-        
+
         html_result = f"""
         <div style="border:3px solid {color}; border-radius:15px; padding:25px;
                     background: linear-gradient(135deg, #f8f9fa, #ffffff);
@@ -117,9 +117,9 @@ def on_predict_clicked(b):
             </div>
             <hr style="border-color:{color}; margin:10px 0;">
             <p style="color:#7f8c8d; text-align:center; font-size:13px;">
-                Tenure: {w_tenure.value}m | 
-                Monthly: ${w_monthly.value:.0f} | 
-                Contract: {w_contract.value} | 
+                Tenure: {w_tenure.value}m |
+                Monthly: ${w_monthly.value:.0f} |
+                Contract: {w_contract.value} |
                 Internet: {w_internet.value}
             </p>
         </div>
