@@ -1,0 +1,20 @@
+# ============================================================
+# CELL 11: Save Model & Preprocessors
+# ============================================================
+
+print("💾 Saving Model and Preprocessors...")
+
+# Save model, scaler, and feature names
+joblib.dump(best_rf, 'churn_model.pkl')
+joblib.dump(scaler,  'scaler.pkl')
+joblib.dump(list(X.columns), 'feature_names.pkl')
+
+print("✅ Model saved as: churn_model.pkl")
+print("✅ Scaler saved as: scaler.pkl")
+print("✅ Feature names saved as: feature_names.pkl")
+
+# Verify by loading back
+loaded_model = joblib.load('churn_model.pkl')
+loaded_scaler = joblib.load('scaler.pkl')
+print("\n✅ Model loaded and verified successfully!")
+print(f"   Type: {type(loaded_model).__name__}")
