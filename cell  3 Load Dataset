@@ -1,0 +1,41 @@
+# ============================================================
+# CELL 3: Load Dataset (Telco Customer Churn)
+# ============================================================
+# Download from URL directly
+url = "https://raw.githubusercontent.com/dsrscientist/dataset1/master/telco_customer_churn.csv"
+
+try:
+    df = pd.read_csv(url)
+    print("✅ Dataset loaded from URL!")
+except:
+    # Fallback: Generate synthetic dataset
+    print("⚠️ URL failed — generating synthetic dataset...")
+    
+    np.random.seed(42)
+    n = 7043
+    
+    df = pd.DataFrame({
+        'customerID': [f'ID-{i:05d}' for i in range(n)],
+        'gender': np.random.choice(['Male', 'Female'], n),
+        'SeniorCitizen': np.random.choice([0, 1], n, p=[0.84, 0.16]),
+        'Partner': np.random.choice(['Yes', 'No'], n),
+        'Dependents': np.random.choice(['Yes', 'No'], n, p=[0.7, 0.3]),
+        'tenure': np.random.randint(0, 72, n),
+        'PhoneService': np.random.choice(['Yes', 'No'], n, p=[0.9, 0.1]),
+        'MultipleLines': np.random.choice(['Yes', 'No', 'No phone service'], n),
+        'InternetService': np.random.choice(['DSL', 'Fiber optic', 'No'], n, p=[0.34, 0.44, 0.22]),
+        'OnlineSecurity': np.random.choice(['Yes', 'No', 'No internet service'], n),
+        'TechSupport': np.random.choice(['Yes', 'No', 'No internet service'], n),
+        'Contract': np.random.choice(['Month-to-month', 'One year', 'Two year'], n, p=[0.55, 0.21, 0.24]),
+        'PaperlessBilling': np.random.choice(['Yes', 'No'], n, p=[0.59, 0.41]),
+        'PaymentMethod': np.random.choice(
+            ['Electronic check', 'Mailed check', 'Bank transfer (automatic)', 'Credit card (automatic)'], n),
+        'MonthlyCharges': np.round(np.random.uniform(18, 118, n), 2),
+        'TotalCharges': np.round(np.random.uniform(18, 8500, n), 2),
+        'Churn': np.random.choice(['Yes', 'No'], n, p=[0.265, 0.735])
+    })
+    print("✅ Synthetic dataset created!")
+
+print(f"\n📊 Dataset Shape: {df.shape}")
+print(f"📋 Columns: {list(df.columns)}")
+df.head()
