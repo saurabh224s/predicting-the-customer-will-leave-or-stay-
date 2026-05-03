@@ -1,0 +1,78 @@
+# ============================================================
+# CELL 5: Visualization Dashboard
+# ============================================================
+
+fig, axes = plt.subplots(3, 3, figsize=(18, 15))
+fig.suptitle('📊 Customer Churn - EDA Dashboard', fontsize=20, fontweight='bold', y=1.02)
+
+# 1. Churn Distribution (Pie)
+churn_counts = df['Churn'].value_counts()
+colors = ['#2ecc71', '#e74c3c']
+axes[0, 0].pie(churn_counts, labels=churn_counts.index, autopct='%1.1f%%',
+               colors=colors, startangle=90, shadow=True)
+axes[0, 0].set_title('🎯 Churn Distribution', fontsize=13, fontweight='bold')
+
+# 2. Churn by Gender
+gender_churn = pd.crosstab(df['gender'], df['Churn'], normalize='index') * 100
+gender_churn.plot(kind='bar', ax=axes[0, 1], color=['#2ecc71', '#e74c3c'],
+                  edgecolor='black', rot=0)
+axes[0, 1].set_title('👥 Churn by Gender (%)', fontsize=13, fontweight='bold')
+axes[0, 1].set_ylabel('Percentage')
+axes[0, 1].legend(['No Churn', 'Churn'])
+
+# 3. Churn by Contract Type
+contract_churn = pd.crosstab(df['Contract'], df['Churn'], normalize='index') * 100
+contract_churn.plot(kind='bar', ax=axes[0, 2], color=['#3498db', '#e74c3c'],
+                    edgecolor='black', rot=15)
+axes[0, 2].set_title('📄 Churn by Contract (%)', fontsize=13, fontweight='bold')
+axes[0, 2].set_ylabel('Percentage')
+
+# 4. Tenure Distribution
+df.groupby('Churn')['tenure'].plot(kind='hist', ax=axes[1, 0],
+                                    alpha=0.7, bins=30, color=['#2ecc71', '#e74c3c'])
+axes[1, 0].set_title('📅 Tenure Distribution', fontsize=13, fontweight='bold')
+axes[1, 0].set_xlabel('Tenure (months)')
+axes[1, 0].legend(['No Churn', 'Churn'])
+
+# 5. Monthly Charges vs Churn
+df.boxplot(column='MonthlyCharges', by='Churn', ax=axes[1, 1],
+           patch_artist=True,
+           boxprops=dict(facecolor='lightblue'),
+           medianprops=dict(color='red', linewidth=2))
+axes[1, 1].set_title('💰 Monthly Charges by Churn', fontsize=13, fontweight='bold')
+axes[1, 1].set_xlabel('Churn')
+plt.sca(axes[1, 1])
+plt.title('💰 Monthly Charges by Churn')
+
+# 6. Internet Service Distribution
+internet_churn = pd.crosstab(df['InternetService'], df['Churn'])
+internet_churn.plot(kind='bar', ax=axes[1, 2], color=['#27ae60', '#c0392b'],
+                    edgecolor='black', rot=15)
+axes[1, 2].set_title('🌐 Internet Service vs Churn', fontsize=13, fontweight='bold')
+
+# 7. Correlation Heatmap (numeric only)
+numeric_df = df.select_dtypes(include=[np.number])
+corr_matrix = numeric_df.corr()
+sns.heatmap(corr_matrix, annot=True, fmt='.2f', cmap='coolwarm',
+            ax=axes[2, 0], linewidths=0.5, square=True)
+axes[2, 0].set_title('🔥 Correlation Heatmap', fontsize=13, fontweight='bold')
+
+# 8. Monthly Charges Histogram
+df[df['Churn']=='No']['MonthlyCharges'].plot(kind='hist', ax=axes[2, 1],
+                                             alpha=0.7, bins=30, color='#2ecc71', label='No Churn')
+df[df['Churn']=='Yes']['MonthlyCharges'].plot(kind='hist', ax=axes[2, 1],
+                                              alpha=0.7, bins=30, color='#e74c3c', label='Churn')
+axes[2, 1].set_title('💳 Monthly Charges Distribution', fontsize=13, fontweight='bold')
+axes[2, 1].legend()
+
+# 9. Churn by Payment Method
+payment_churn = pd.crosstab(df['PaymentMethod'], df['Churn'], normalize='index') * 100
+payment_churn['Yes'].sort_values().plot(kind='barh', ax=axes[2, 2],
+                                         color='#e74c3c', edgecolor='black')
+axes[2, 2].set_title('💳 Churn Rate by Payment (%)', fontsize=13, fontweight='bold')
+axes[2, 2].set_xlabel('Churn Rate (%)')
+
+plt.tight_layout()
+plt.savefig('eda_dashboard.png', bbox_inches='tight', dpi=150)
+plt.show()
+print("✅ EDA Dashboard saved!")
