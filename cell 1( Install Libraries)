@@ -1,0 +1,6 @@
+# ============================================================
+# CELL 1: Install Required Libraries
+# ============================================================
+!pip install xgboost shap imbalanced-learn --quiet
+
+print("✅ Libraries installed successfully!")
